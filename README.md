@@ -2,8 +2,6 @@
 
 > **Turn any topic into a comprehensive video course in seconds using AI.**
 
-![Project Banner](https://images.unsplash.com/photo-1626544827763-d516dce335ca?q=80&w=1200&auto=format&fit=crop) 
-*(Example banner - replace with your own screenshot)*
 
 ## 🚀 Features
 
@@ -110,4 +108,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-**Built with ❤️ by [Your Name]**
+**Built with ❤️ by Manokamna**
