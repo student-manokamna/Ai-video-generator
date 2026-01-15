@@ -68,8 +68,8 @@ export class AudioGeneratorService {
 
         for (const slide of slides) {
             try {
-                // Add artificial delay to prevent rate limiting (1 second)
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Add artificial delay to prevent rate limiting (0.1 second)
+                await new Promise(resolve => setTimeout(resolve, 100));
 
                 const audioPath = await this.generateAudio(
                     slide.narration,

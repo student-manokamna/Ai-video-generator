@@ -1,143 +1,145 @@
-import { auth } from '@/lib/auth';
-import prisma from '@/lib/db';
-import { headers } from 'next/headers';
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import React from 'react';
+"use client";
 
-// Helper to format date
-const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  }).format(date);
-};
+import { authClient } from "@/lib/auth-client";
+import { IconMail, IconUser, IconCalendar, IconVideo } from "@tabler/icons-react";
+import Image from "next/image";
+import React, { useEffect, useState } from "react";
+import { motion } from "motion/react";
 
-const ProfilePage = async () => {
-  const session = await auth.api.getSession({
-    headers: await headers()
-  });
+export default function ProfilePage() {
+    const [user, setUser] = useState<{
+        name: string;
+        email: string;
+        image?: string;
+        createdAt?: Date;
+    } | null>(null);
 
-  if (!session?.user) {
-    redirect('/login');
-  }
+    const [courseCount, setCourseCount] = useState(0);
 
-  // Fetch user's courses
-  const courses = await prisma.course.findMany({
-    where: {
-      userId: session.user.id
-    },
-    orderBy: {
-      createdAt: 'desc'
-    },
-    include: {
-      _count: {
-        select: { chapters: true }
-      }
+    useEffect(() => {
+        const fetchUserAndStats = async () => {
+            const session = await authClient.getSession();
+            if (session?.data?.user) {
+                setUser({
+                    name: session.data.user.name || "User",
+                    email: session.data.user.email,
+                    image: session.data.user.image || undefined,
+                    createdAt: session.data.user.createdAt,
+                });
+            }
+
+            // Fetch courses count
+            try {
+                const res = await fetch("/api/courses");
+                if (res.ok) {
+                    const courses = await res.json();
+                    setCourseCount(courses.length);
+                }
+            } catch (error) {
+                console.error("Failed to fetch stats", error);
+            }
+        };
+        fetchUserAndStats();
+    }, []);
+
+    if (!user) {
+        return (
+            <div className="flex h-full items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-neutral-200 border-t-blue-600"></div>
+            </div>
+        );
     }
-  });
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-8 dark:bg-neutral-900">
-      <div className="mx-auto max-w-6xl space-y-8">
-        {/* Profile Header */}
-        <div className="rounded-2xl bg-white p-8 shadow-sm dark:bg-neutral-800">
-          <div className="flex items-center gap-6">
-            {session.user.image ? (
-              <img
-                src={session.user.image}
-                alt={session.user.name || 'User'}
-                className="h-24 w-24 rounded-full border-4 border-blue-100 object-cover dark:border-blue-900/30"
-              />
-            ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-blue-100 text-3xl font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                {(session.user.name?.[0] || 'U').toUpperCase()}
-              </div>
-            )}
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {session.user.name}
-              </h1>
-              <p className="text-gray-500 dark:text-gray-400">
-                {session.user.email}
-              </p>
-              <div className="mt-2 flex items-center gap-2 text-sm text-gray-400">
-                <span>Member since {formatDate(session.user.createdAt)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Courses Section */}
-        <div>
-          <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
-            My Courses ({courses.length})
-          </h2>
-
-          {courses.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {courses.map((course) => (
-                <Link
-                  key={course.id}
-                  href={`/course/${course.courseId}`}
-                  className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all hover:border-blue-500 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-800 dark:hover:border-blue-500"
-                >
-                  <div className="p-6">
-                    <div className="mb-4 flex items-center justify-between">
-                      <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                        {course.level}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {formatDate(course.createdAt)}
-                      </span>
+    return (
+        <div className="mx-auto max-w-4xl py-8">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+            >
+                <div className="h-32 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
+                <div className="px-8 pb-8">
+                    <div className="relative -mt-16 mb-6 flex justify-between">
+                        <div className="overflow-hidden rounded-full border-4 border-white dark:border-neutral-900">
+                            {user.image ? (
+                                <Image
+                                    src={user.image}
+                                    alt={user.name}
+                                    width={128}
+                                    height={128}
+                                    className="h-32 w-32 object-cover"
+                                />
+                            ) : (
+                                <div className="flex h-32 w-32 items-center justify-center bg-neutral-200 text-4xl font-bold dark:bg-neutral-800">
+                                    {user.name[0].toUpperCase()}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    <h3 className="mb-2 text-xl font-bold text-gray-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
-                      {course.courseName}
-                    </h3>
-
-                    <p className="mb-4 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
-                      {course.courseDescription}
-                    </p>
-
-                    <div className="mt-auto flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center gap-1">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        {course._count.chapters} Chapters
-                      </div>
+                    <div className="mb-8">
+                        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
+                            {user.name}
+                        </h1>
+                        <p className="text-neutral-500 dark:text-neutral-400">
+                            Video Course Creator
+                        </p>
                     </div>
-                  </div>
-                  <div className="bg-gray-50 px-6 py-3 dark:bg-neutral-700/50">
-                    <span className="text-sm font-medium text-blue-600 group-hover:underline dark:text-blue-400">
-                      Continue Learning →
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center dark:border-neutral-700 dark:bg-neutral-800/50">
-              <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-                No courses yet
-              </h3>
-              <p className="mb-6 text-gray-500 dark:text-gray-400">
-                Create your first AI-generated course to get started!
-              </p>
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700"
-              >
-                Generate New Course
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
 
-export default ProfilePage;
+                    <div className="grid gap-6 md:grid-cols-2">
+                        <div className="space-y-4 rounded-xl border border-neutral-100 bg-neutral-50 p-6 dark:border-neutral-800 dark:bg-neutral-800/50">
+                            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                                Contact Information
+                            </h2>
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-3 text-neutral-600 dark:text-neutral-300">
+                                    <IconMail className="h-5 w-5 text-neutral-400" />
+                                    <span>{user.email}</span>
+                                </div>
+                                <div className="flex items-center gap-3 text-neutral-600 dark:text-neutral-300">
+                                    <IconCalendar className="h-5 w-5 text-neutral-400" />
+                                    <span>
+                                        Member since{" "}
+                                        {user.createdAt
+                                            ? new Date(user.createdAt).toLocaleDateString()
+                                            : "N/A"}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 rounded-xl border border-neutral-100 bg-neutral-50 p-6 dark:border-neutral-800 dark:bg-neutral-800/50">
+                            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                                Statistics
+                            </h2>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-neutral-800">
+                                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                                        <IconVideo className="h-5 w-5" />
+                                    </div>
+                                    <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                                        {courseCount}
+                                    </div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                                        Courses Generated
+                                    </div>
+                                </div>
+                                <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-neutral-800">
+                                    <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+                                        <IconUser className="h-5 w-5" />
+                                    </div>
+                                    <div className="text-2xl font-bold text-neutral-900 dark:text-white">
+                                        Free
+                                    </div>
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                                        Current Plan
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+        </div>
+    );
+}

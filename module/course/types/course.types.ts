@@ -5,6 +5,7 @@ export const ChapterSchema = z.object({
     chapterId: z.string(),
     chapterTitle: z.string(),
     subContent: z.array(z.string()).max(3),
+    notes: z.string().optional(),
 });
 
 export const CourseSchema = z.object({

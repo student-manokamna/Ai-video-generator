@@ -5,12 +5,14 @@ import { PrismaClient } from './generated/prisma/client'
 const connectionString = `${process.env.DATABASE_URL}`
 
 const adapter = new PrismaPg({ connectionString })
-const prismaClientSingleton=()=>{
-    return new PrismaClient({ adapter,log: ['query', 'warn', 'error'], // choose what you want
-    errorFormat: 'pretty' })
+const prismaClientSingleton = () => {
+    return new PrismaClient({
+        adapter, log: ['warn', 'error'], // choose what you want
+        errorFormat: 'pretty'
+    })
 }
-declare const globalThis:{
-    prismaGlobal:ReturnType<typeof prismaClientSingleton>
+declare const globalThis: {
+    prismaGlobal: ReturnType<typeof prismaClientSingleton>
 } & typeof global
 const prisma = globalThis.prismaGlobal || prismaClientSingleton()
 if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = prisma

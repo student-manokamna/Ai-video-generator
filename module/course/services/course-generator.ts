@@ -7,6 +7,8 @@ import { CourseSchema, type Course } from "../types/course.types";
 
 import { initChatModel, HumanMessage, SystemMessage } from "langchain";
 import prisma from "@/lib/db";
+import { slideGenerator } from "./slide-generator";
+import { audioGenerator } from "./audio-generator";
 
 export class CourseGeneratorService {
     /**
@@ -52,6 +54,7 @@ export class CourseGeneratorService {
                             chapterId: chapter.chapterId,
                             chapterTitle: chapter.chapterTitle,
                             subContent: chapter.subContent,
+                            notes: chapter.notes,
                         })),
                     },
                 },
@@ -68,11 +71,80 @@ export class CourseGeneratorService {
     }
 
     /**
+     * Generate content (slides & audio) for a specific chapter
+     */
+    async generateChapterContent(chapterId: string, courseName: string, chapterTitle: string, subContent: string[]) {
+        try {
+            // 1. Generate Slides
+            const slides = await slideGenerator.generateSlides(courseName, chapterTitle, subContent);
+
+            // 2. Generate Audio for Slides
+            const audioMap = await audioGenerator.generateAudioBatch(
+                slides.map(s => ({
+                    slideId: s.slideId,
+                    narration: s.narration.fullText
+                }))
+            );
+
+            // 3. Save Slides to DB
+            // We use a transaction or just sequential updates
+            // Since we need to likely map the slideId back to db, but here we can just create them
+            // The slideId from AI is distinct from DB ID.
+
+            for (const slide of slides) {
+                const audioPath = audioMap.get(slide.slideId);
+
+                await prisma.slide.create({
+                    data: {
+                        slideId: slide.slideId,
+                        slideIndex: slide.slideIndex,
+                        title: slide.title,
+                        subtitle: slide.subtitle,
+                        narration: slide.narration.fullText,
+                        audioFileName: audioPath, // Can be null if failed
+                        chapterId: chapterId,
+                    }
+                });
+            }
+
+            console.log(`Generated content for chapter ${chapterTitle}`);
+
+        } catch (error) {
+            console.error(`Failed to generate content for chapter ${chapterId}:`, error);
+            // Don't throw, just log so other chapters might succeed? 
+            // Or throw to allow retry?
+        }
+    }
+
+    /**
      * Generate and save course in one operation
      */
     async generateAndSaveCourse(topic: string, userId: string) {
+        // 1. Generate Structure
         const course = await this.generateCourse(topic);
+
+        // 2. Save Structure
         const savedCourse = await this.saveCourse(course, userId);
+
+        // 3. Trigger Content Generation (Async background-ish)
+        // In Vercel, this might timeout if we await it fully. 
+        // For 'dev', we can await. For prod, ideally use Inngest/Queue.
+        // We will loop through chapters and generate content.
+
+        console.log("Starting content generation for chapters...");
+
+        // We'll process in parallel to speed it up!
+        await Promise.all(
+            savedCourse.chapters.map((chapter) =>
+                this.generateChapterContent(
+                    chapter.id, // DB ID
+                    savedCourse.courseName,
+                    chapter.chapterTitle,
+                    chapter.subContent
+                )
+            )
+        );
+
         return savedCourse;
     }
 }

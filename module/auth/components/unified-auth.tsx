@@ -36,7 +36,7 @@ export function UnifiedAuthForm() {
                     },
                 });
 
-               
+
             } else {
                 // Signup flow
                 const name = formData.get("name") as string;
@@ -54,7 +54,7 @@ export function UnifiedAuthForm() {
                     },
                 });
 
-                
+
             }
         } catch (err) {
             console.error(err);
@@ -76,7 +76,7 @@ export function UnifiedAuthForm() {
     };
 
     return (
-        <div className="shadow-input mx-auto w-full max-w-md rounded-2xl bg-white p-8 dark:bg-black">
+        <div className="mx-auto w-full max-w-md space-y-6">
             {/* Tab Switcher */}
             <div className="mb-6 flex gap-2 rounded-lg bg-gray-100 p-1 dark:bg-zinc-900">
                 <button
