@@ -82,11 +82,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ---
 
-## 📸 Screenshots
 
-| Dashboard | Course Player |
-|:---:|:---:|
-| *(Add Screenshot)* | *(Add Screenshot)* |
 
 ---
 
