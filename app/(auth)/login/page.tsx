@@ -17,14 +17,14 @@ export default function LoginPage() {
                     <div className="flex items-center gap-4">
                         <div className="h-10 w-10 rounded-full bg-neutral-800"></div>
                         <div>
-                            <p className="font-medium">Alex Chen</p>
-                            <p className="text-sm text-neutral-400">Product Designer</p>
+                            <p className="font-medium">Manokamna</p>
+                            <p className="text-sm text-neutral-400">Founder & Developer</p>
                         </div>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-6 text-sm text-neutral-400">
-                    <span>© 2024 AI Course Generator</span>
+                    <span>© 2026 AI Course Generator</span>
                     <a href="#" className="hover:text-white">Privacy</a>
                     <a href="#" className="hover:text-white">Terms</a>
                 </div>
